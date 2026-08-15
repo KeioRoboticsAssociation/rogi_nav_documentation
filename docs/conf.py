@@ -9,6 +9,7 @@
 project = 'Rogi_Nav_Documentation'
 copyright = '2026, Yuki_Noka'
 author = 'Yuki_Noka'
+release = 'latest'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -23,5 +24,15 @@ language = 'ja'
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+html_css_files = [
+    'rogi_theme.css',
+]
+
+html_theme_options = {
+    'collapse_navigation': False,
+    'navigation_depth': 4,
+    'sticky_navigation': True,
+    'style_external_links': True,
+}
