@@ -6,12 +6,14 @@
 Rogi_Nav_Documentation documentation
 ====================================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+Rogi Nav は、ロボコン向けの ROS 2 ナビゲーションスタックです。
+Gazebo シミュレーション、LiDAR センシング、地図変換、自己位置推定、
+経路追従、BehaviorTree による状態管理、RViz/Groot/Web 表示をまとめて起動できます。
 
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   setup
+   nodes
