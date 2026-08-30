@@ -1,34 +1,32 @@
 # Docker でのセットアップ
 
-Docker image をローカルでビルドします。
+ローカルで image を作る場合は次を実行します。
 
 ```bash
 cd ~/rogi_nav_ws/src/rogi_nav
 make build
 ```
 
-GitHub Container Registry の image を使う場合は次を実行します。
+配布済み image を使う場合は `make pull` だけで構いません。
 
 ```bash
 make pull
 ```
 
-コンテナ内でシェルを開き、外部ツールをセットアップします。
-
-```bash
-ssh -T git@github.com
-make shell
-make setup
-```
-
-シミュレーションを起動します。
+シミュレーションは次で起動します。
 
 ```bash
 make run
 ```
 
-launch 引数を渡す場合は `LAUNCH_ARGS` を使います。
+profile を明示する場合は `LAUNCH_ARGS` に渡します。
 
 ```bash
 make run LAUNCH_ARGS="config_profile:=sim"
+```
+
+コンテナ内で手作業する場合だけ、シェルを開いてから通常のホスト手順を実行します。
+
+```bash
+make shell
 ```
