@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="1030" viewBox="0 0 1320 1030" role="img" aria-labelledby="title desc">
+<title id="title">rogi_nav architecture</title>
+<desc id="desc">ROS 2 navigation stack. A BehaviorTree.CPP state node sends FollowPath goals to simple_pure_pursuit. RANSAC or EMCL2 supplies localization. Velocity commands drive Gazebo or real motor interfaces. CSV files supply maps and trajectories. See architecture.md for configuration and source references.</desc>
+<style>
+:root { --bg:#ffffff; --fg:#1f2937; --muted:#667085; --border:#d8dee7; --panel:#f6f8fb; --card:#ffffff; --green:#218653; --blue:#2675cd; --purple:#8754c8; --orange:#bd651e; --gray:#788392; }
+@media(prefers-color-scheme:dark) { :root { --bg:#0d1117; --fg:#e6edf3; --muted:#9ca9b9; --border:#303c4b; --panel:#131a23; --card:#18212d; --green:#56c58c; --blue:#6bafff; --purple:#bd97f3; --orange:#f1ad68; --gray:#a5b0bf; } }
+text { font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; fill:var(--fg); }
+.title { font-size:28px; font-weight:750; } .subtitle { font-size:14px; fill:var(--muted); }
+.group { font-size:12px; font-weight:750; letter-spacing:1.5px; }
+.name { font-size:16px; font-weight:650; } .detail { font-size:12px; fill:var(--muted); }
+.label { font-size:11px; fill:var(--muted); } .mono { font-family:ui-monospace,"DejaVu Sans Mono",monospace; font-size:12px; }
+.panel { fill:var(--panel); stroke:var(--border); } .card { fill:var(--card); stroke:var(--border); }
+.edge { fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; opacity:.8; }
+.pulse { fill:none; stroke-width:3; stroke-dasharray:7 93; stroke-linecap:round; animation:flow 4s linear infinite; opacity:.9; }
+@keyframes flow { to { stroke-dashoffset:-100; } }
+@media(prefers-reduced-motion:reduce) { .pulse { display:none; } }
+</style><defs>
+<marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="var(--green)"/></marker>
+<marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="var(--blue)"/></marker>
+<marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="var(--purple)"/></marker>
+<marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="var(--orange)"/></marker>
+<marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="var(--gray)"/></marker>
+</defs><rect width="1320" height="1030" fill="var(--bg)"/>
+<text x="48" y="47" class="title" >rogi_nav</text>
+<text x="210" y="45" class="subtitle" >ROS 2 navigation  /  sensing, localization and behavior-driven path following</text>
+<rect x="48" y="78" width="1224" height="70" rx="12" class="panel"/>
+<text x="68" y="103" class="group" >BRINGUP</text>
+<text x="68" y="128" class="mono" >rogi_launch / rogi_nav.launch.py</text>
+<text x="530" y="103" class="mono" >example/&lt;name&gt;/config</text>
+<text x="530" y="128" class="detail" >real.yaml / sim.yaml  +  initial_pose.yaml  +  component settings</text>
+<text x="1110" y="103" class="name" >ROS 2 Jazzy</text>
+<text x="1110" y="128" class="detail" >Gazebo Harmonic</text>
+<text x="660" y="173" class="label" text-anchor="middle">Launch selects components, localization method and execution profile.</text>
+<rect x="48" y="194" width="360" height="473" rx="12" class="panel"/><path d="M60 194 H396" stroke="var(--green)" stroke-width="3" stroke-linecap="round"/>
+<text x="66" y="220" class="group" style="fill:var(--green)">SENSING &amp; ODOMETRY</text>
+<rect x="480" y="194" width="360" height="473" rx="12" class="panel"/><path d="M492 194 H828" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"/>
+<text x="498" y="220" class="group" style="fill:var(--blue)">MAP &amp; LOCALIZATION</text>
+<rect x="912" y="194" width="360" height="473" rx="12" class="panel"/><path d="M924 194 H1260" stroke="var(--purple)" stroke-width="3" stroke-linecap="round"/>
+<text x="930" y="220" class="group" style="fill:var(--purple)">BEHAVIOR &amp; CONTROL</text>
+<rect x="68" y="238" width="320" height="64" rx="8" class="card"/><path d="M69 250 V290" stroke="var(--green)" stroke-width="4" stroke-linecap="round"/>
+<text x="83" y="263" class="name" >LiDAR input</text>
+<text x="83" y="283" class="detail" >Real: sick_scan_xd / PicoScan</text>
+<text x="83" y="300" class="detail" >Sim: Gazebo laser scans</text>
+<rect x="68" y="336" width="320" height="60" rx="8" class="card"/><path d="M69 348 V384" stroke="var(--green)" stroke-width="4" stroke-linecap="round"/>
+<text x="83" y="361" class="name" >scan_merger</text>
+<text x="83" y="381" class="detail" >Multiple scans → /scan_for_localization</text>
+<rect x="68" y="434" width="320" height="66" rx="8" class="card"/><path d="M69 446 V488" stroke="var(--green)" stroke-width="4" stroke-linecap="round"/>
+<text x="83" y="459" class="name" >line_detector</text>
+<text x="83" y="479" class="detail" >RANSAC line extraction</text>
+<text x="83" y="496" class="detail" >rogi_ransac</text>
+<rect x="68" y="556" width="320" height="88" rx="8" class="card"/><path d="M69 568 V632" stroke="var(--green)" stroke-width="4" stroke-linecap="round"/>
+<text x="83" y="581" class="name" >Odometry source</text>
+<text x="83" y="601" class="detail" >Real: wheel_odometry ← /rogidrive_status</text>
+<text x="83" y="618" class="detail" >Sim: odom_drift_simulator ← /odom_raw</text>
+<text x="83" y="635" class="detail" >/odom + TF odom → base_link</text>
+<rect x="500" y="238" width="320" height="88" rx="8" class="card"/><path d="M501 250 V314" stroke="var(--blue)" stroke-width="4" stroke-linecap="round"/>
+<text x="515" y="263" class="name" >map_loader → map_converter</text>
+<text x="515" y="283" class="detail" >CSV: line segments + circles</text>
+<text x="515" y="300" class="detail" >/raw_map  ·  rogi_msgs/Map</text>
+<text x="515" y="317" class="detail" >/map  ·  nav_msgs/OccupancyGrid</text>
+<rect x="500" y="434" width="320" height="66" rx="8" class="card"/><path d="M501 446 V488" stroke="var(--blue)" stroke-width="4" stroke-linecap="round"/>
+<text x="515" y="459" class="name" >ransac_localizer</text>
+<text x="515" y="479" class="detail" >Line matching + wheel / simulated odometry</text>
+<text x="515" y="496" class="detail" >Uses /raw_map + /line_segments + /odom</text>
+<rect x="500" y="556" width="320" height="88" rx="8" class="card"/><path d="M501 568 V632" stroke="var(--blue)" stroke-width="4" stroke-linecap="round"/>
+<text x="515" y="581" class="name" >emcl2</text>
+<text x="515" y="601" class="detail" >Alternative localization method</text>
+<text x="515" y="618" class="detail" >Uses /map + laser scan + odometry TF</text>
+<text x="515" y="635" class="detail" >Sim scan input: scan_frame_normalizer</text>
+<text x="660" y="359" class="mono" text-anchor="middle">localization_method: ransac | emcl2</text>
+<rect x="932" y="238" width="320" height="64" rx="8" class="card"/><path d="M933 250 V290" stroke="var(--purple)" stroke-width="4" stroke-linecap="round"/>
+<text x="947" y="263" class="name" >state_node</text>
+<text x="947" y="283" class="detail" >BehaviorTree.CPP v3  ·  tree/main.xml</text>
+<text x="947" y="300" class="detail" >WaitStart → FollowPath(path_index)</text>
+<rect x="932" y="336" width="284" height="60" rx="8" class="card"/><path d="M933 348 V384" stroke="var(--purple)" stroke-width="4" stroke-linecap="round"/>
+<text x="947" y="361" class="name" >Trajectory CSV</text>
+<text x="947" y="381" class="detail" >Pre-generated paths / trajectory/*.csv</text>
+<rect x="932" y="434" width="320" height="66" rx="8" class="card"/><path d="M933 446 V488" stroke="var(--purple)" stroke-width="4" stroke-linecap="round"/>
+<text x="947" y="459" class="name" >simple_pure_pursuit</text>
+<text x="947" y="479" class="detail" >FollowPath action server</text>
+<text x="947" y="496" class="detail" >Pose + selected trajectory → velocity</text>
+<rect x="932" y="556" width="320" height="88" rx="8" class="card"/><path d="M933 568 V632" stroke="var(--orange)" stroke-width="4" stroke-linecap="round"/>
+<text x="947" y="581" class="name" >cmd_vel_to_dcmotor</text>
+<text x="947" y="601" class="detail" >Real robot profile</text>
+<text x="947" y="618" class="detail" >Twist → wheel motor targets</text>
+<text x="947" y="635" class="detail" >/rogidrive_cmd</text>
+<path d="M228 302 V336" class="edge" stroke="var(--green)" marker-end="url(#arrow-green)"/>
+<path d="M228 302 V336" class="pulse" stroke="var(--green)" pathLength="100"/>
+<path d="M228 396 V434" class="edge" stroke="var(--green)" marker-end="url(#arrow-green)"/>
+<path d="M228 396 V434" class="pulse" stroke="var(--green)" pathLength="100"/>
+<rect x="152.7" y="406" width="150.6" height="17" rx="4" fill="var(--bg)"/>
+<text x="228" y="417" class="label" text-anchor="middle">/scan_for_localization</text>
+<path d="M388 467 H500" class="edge" stroke="var(--green)" marker-end="url(#arrow-green)"/>
+<path d="M388 467 H500" class="pulse" stroke="var(--green)" pathLength="100"/>
+<rect x="393.9" y="440" width="100.2" height="17" rx="4" fill="var(--bg)"/>
+<text x="444" y="451" class="label" text-anchor="middle">/line_segments</text>
+<path d="M660 326 V343 M660 371 V434" class="edge" stroke="var(--blue)" marker-end="url(#arrow-blue)"/>
+<path d="M660 326 V343 M660 371 V434" class="pulse" stroke="var(--blue)" pathLength="100"/>
+<rect x="628.8" y="394" width="62.4" height="17" rx="4" fill="var(--bg)"/>
+<text x="660" y="405" class="label" text-anchor="middle">/raw_map</text>
+<path d="M820 303 H831 V536 H660 V556" class="edge" stroke="var(--blue)" marker-end="url(#arrow-blue)"/>
+<path d="M820 303 H831 V536 H660 V556" class="pulse" stroke="var(--blue)" pathLength="100"/>
+<rect x="717.4" y="525" width="37.2" height="17" rx="4" fill="var(--bg)"/>
+<text x="736" y="536" class="label" text-anchor="middle">/map</text>
+<path d="M388 596 H445 V489 H500" class="edge" stroke="var(--green)" marker-end="url(#arrow-green)"/>
+<path d="M388 596 H445 V489 H500" class="pulse" stroke="var(--green)" pathLength="100"/>
+<rect x="422.25" y="513" width="43.5" height="17" rx="4" fill="var(--bg)"/>
+<text x="444" y="524" class="label" text-anchor="middle">/odom</text>
+<path d="M445 596 H500" class="edge" stroke="var(--green)" marker-end="url(#arrow-green)"/>
+<path d="M445 596 H500" class="pulse" stroke="var(--green)" pathLength="100"/>
+<rect x="415.95" y="614" width="56.1" height="17" rx="4" fill="var(--bg)"/>
+<text x="444" y="625" class="label" text-anchor="middle">odom TF</text>
+<path d="M820 467 H932" class="edge" stroke="var(--blue)" marker-end="url(#arrow-blue)"/>
+<path d="M820 467 H932" class="pulse" stroke="var(--blue)" pathLength="100"/>
+<rect x="813.3" y="440" width="125.39999999999999" height="17" rx="4" fill="var(--bg)"/>
+<text x="876" y="451" class="label" text-anchor="middle">/localization_pose</text>
+<path d="M820 600 H870 V467" class="edge" stroke="var(--blue)" marker-end="url(#arrow-blue)"/>
+<path d="M820 600 H870 V467" class="pulse" stroke="var(--blue)" pathLength="100"/>
+<path d="M1080 302 V320 H1234 V434" class="edge" stroke="var(--purple)" marker-end="url(#arrow-purple)"/>
+<path d="M1080 302 V320 H1234 V434" class="pulse" stroke="var(--purple)" pathLength="100"/>
+<rect x="1114.15" y="307" width="131.7" height="17" rx="4" fill="var(--bg)"/>
+<text x="1180" y="318" class="label" text-anchor="middle">/follow_path action</text>
+<path d="M1074 396 V434" class="edge" stroke="var(--purple)" marker-end="url(#arrow-purple)" stroke-dasharray="5 5"/>
+<rect x="1039.65" y="406" width="68.69999999999999" height="17" rx="4" fill="var(--bg)"/>
+<text x="1074" y="417" class="label" text-anchor="middle">path data</text>
+<path d="M1092 500 V556" class="edge" stroke="var(--orange)" marker-end="url(#arrow-orange)"/>
+<path d="M1092 500 V556" class="pulse" stroke="var(--orange)" pathLength="100"/>
+<rect x="1060.8" y="520" width="62.4" height="17" rx="4" fill="var(--bg)"/>
+<text x="1092" y="531" class="label" text-anchor="middle">/cmd_vel</text>
+<rect x="48" y="747" width="1224" height="160" rx="12" class="panel"/><path d="M60 747 H1260" stroke="var(--orange)" stroke-width="3" stroke-linecap="round"/>
+<text x="66" y="773" class="group" style="fill:var(--orange)">EXECUTION  /  SELECTED BY PROFILE</text>
+<rect x="68" y="794" width="530" height="91" rx="8" class="card"/><path d="M69 806 V873" stroke="var(--gray)" stroke-width="4" stroke-linecap="round"/>
+<text x="83" y="819" class="name" >Gazebo simulation</text>
+<text x="83" y="839" class="detail" >ros_gz_bridge  ·  /cmd_vel → simulated robot</text>
+<text x="83" y="856" class="detail" >Laser scans + /odom_raw → sensor / odometry adapters</text>
+<text x="83" y="873" class="detail" >gazebo_simulator package  ·  rogi_simulator/</text>
+<rect x="700" y="794" width="552" height="91" rx="8" class="card"/><path d="M701 806 V873" stroke="var(--orange)" stroke-width="4" stroke-linecap="round"/>
+<text x="715" y="819" class="name" >Real robot</text>
+<text x="715" y="839" class="detail" >rs485_interface2 + stm32_mavlink_udp (external packages)</text>
+<text x="715" y="856" class="detail" >Motor commands → hardware  ·  /rogidrive_status → odometry</text>
+<text x="715" y="873" class="detail" >PicoScan → sensing front end</text>
+<path d="M1252 475 H1296 V713 H333 V794" class="edge" stroke="var(--orange)" marker-end="url(#arrow-orange)"/>
+<path d="M1252 475 H1296 V713 H333 V794" class="pulse" stroke="var(--orange)" pathLength="100"/>
+<rect x="591.55" y="702" width="156.9" height="17" rx="4" fill="var(--bg)"/>
+<text x="670" y="713" class="label" text-anchor="middle">/cmd_vel  ·  simulation</text>
+<path d="M1092 644 V794" class="edge" stroke="var(--orange)" marker-end="url(#arrow-orange)"/>
+<path d="M1092 644 V794" class="pulse" stroke="var(--orange)" pathLength="100"/>
+<rect x="1013.55" y="722" width="156.9" height="17" rx="4" fill="var(--bg)"/>
+<text x="1092" y="733" class="label" text-anchor="middle">/rogidrive_cmd  ·  real</text>
+<path d="M48 833 H22 V270 H68" class="edge" stroke="var(--green)" marker-end="url(#arrow-green)"/>
+<path d="M48 833 H22 V270 H68" class="pulse" stroke="var(--green)" pathLength="100"/>
+<g transform="rotate(-90 22 704)">
+<rect x="-31.25" y="693" width="106.5" height="17" rx="4" fill="var(--bg)"/>
+<text x="22" y="704" class="label" text-anchor="middle">sensor feedback</text>
+</g>
+<rect x="48" y="928" width="1224" height="58" rx="10" class="panel"/>
+<text x="66" y="950" class="group" >OBSERVABILITY</text>
+<text x="66" y="971" class="label" >Optional tools</text>
+<text x="255" y="950" class="name" >RViz2 + visualizers</text>
+<text x="255" y="972" class="detail" >Maps, paths, pose and TF</text>
+<text x="595" y="950" class="name" >Groot Monitor</text>
+<text x="595" y="972" class="detail" >state_node → ZeroMQ → tree status</text>
+<text x="956" y="950" class="name" >Web streaming</text>
+<text x="956" y="972" class="detail" >RViz / Groot tabs in a browser</text>
+<text x="48" y="1012" class="label" >Solid arrows: runtime flow    ·    Dashed arrow: file input    ·    Only one localization method runs at a time.</text>
+<text x="1272" y="1012" class="label" text-anchor="end">Architecture overview · see architecture.md</text>
+</svg>
