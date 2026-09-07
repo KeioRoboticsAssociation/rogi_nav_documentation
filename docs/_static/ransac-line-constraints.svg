@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="340" viewBox="0 0 1100 340" role="img" aria-labelledby="title desc">
+<title id="title">Constraints from one, two and three observed wall segments</title>
+<desc id="desc">One horizontal wall or two parallel horizontal walls constrain y and yaw but leave x free. Two perpendicular walls, or three walls in a U shape, locally constrain x, y and yaw when correctly matched. Orange arrows mark unconstrained translation. With the default minimum of two matches, a single line does not trigger correction.</desc>
+<defs><marker id="free" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#c46a1b"/></marker></defs>
+<style>text{font-family:Arial,sans-serif;fill:#25364a} .title{font-size:17px;font-weight:700}.small{font-size:13px;fill:#526577}.wall{stroke:#2878b8;stroke-width:6;stroke-linecap:round}</style>
+<rect width="1100" height="340" fill="#fff"/>
+
+<g transform="translate(12,12)"><rect width="254" height="276" rx="12" fill="#f5f8fc" stroke="#d7e1eb"/>
+<text x="16" y="30" class="title">1 line: one wall</text>
+<path d="M40 200 H213" class="wall"/><text x="23" y="205" class="small">A</text>
+<path d="M57 147 H193" stroke="#c46a1b" stroke-width="2.5" marker-start="url(#free)" marker-end="url(#free)"/><text x="127" y="123" text-anchor="middle" class="small">x remains free</text>
+<circle cx="127" cy="147" r="10" fill="#8754c8" stroke="white" stroke-width="2"/><path d="M127 147 h20" stroke="#8754c8" stroke-width="3"/>
+<text x="127" y="245" text-anchor="middle" class="small">Default: prediction only</text></g>
+<g transform="translate(286,12)"><rect width="254" height="276" rx="12" fill="#f5f8fc" stroke="#d7e1eb"/>
+<text x="16" y="30" class="title">2 lines: parallel</text>
+<path d="M40 200 H213" class="wall"/><text x="23" y="205" class="small">A</text>
+<path d="M40 80 H213" class="wall"/><text x="23" y="85" class="small">C</text>
+<path d="M57 147 H193" stroke="#c46a1b" stroke-width="2.5" marker-start="url(#free)" marker-end="url(#free)"/><text x="127" y="123" text-anchor="middle" class="small">x remains free</text>
+<circle cx="127" cy="147" r="10" fill="#8754c8" stroke="white" stroke-width="2"/><path d="M127 147 h20" stroke="#8754c8" stroke-width="3"/>
+<text x="127" y="245" text-anchor="middle" class="small">Correct y / yaw; x follows odom</text></g>
+<g transform="translate(560,12)"><rect width="254" height="276" rx="12" fill="#f5f8fc" stroke="#d7e1eb"/>
+<text x="16" y="30" class="title">2 lines: corner</text>
+<path d="M40 200 H213" class="wall"/><text x="23" y="205" class="small">A</text>
+<path d="M213 80 V200" class="wall"/><text x="226" y="145" class="small">B</text>
+<text x="127" y="123" text-anchor="middle" class="small">locally constrained</text>
+<circle cx="127" cy="147" r="10" fill="#8754c8" stroke="white" stroke-width="2"/><path d="M127 147 h20" stroke="#8754c8" stroke-width="3"/>
+<text x="127" y="245" text-anchor="middle" class="small">Correct x / y / yaw</text></g>
+<g transform="translate(834,12)"><rect width="254" height="276" rx="12" fill="#f5f8fc" stroke="#d7e1eb"/>
+<text x="16" y="30" class="title">3 lines: U shape</text>
+<path d="M40 200 H213" class="wall"/><text x="23" y="205" class="small">A</text>
+<path d="M40 80 H213" class="wall"/><text x="23" y="85" class="small">C</text>
+<path d="M213 80 V200" class="wall"/><text x="226" y="145" class="small">B</text>
+<text x="127" y="123" text-anchor="middle" class="small">locally constrained</text>
+<circle cx="127" cy="147" r="10" fill="#8754c8" stroke="white" stroke-width="2"/><path d="M127 147 h20" stroke="#8754c8" stroke-width="3"/>
+<text x="127" y="245" text-anchor="middle" class="small">More constraints on y / yaw</text></g>
+<text x="20" y="320" class="small">Blue: matched map walls  ·  Purple: robot (+x heading)  ·  Orange: translation not constrained by line residuals</text></svg>
