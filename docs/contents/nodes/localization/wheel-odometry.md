@@ -144,7 +144,7 @@ v_y=\frac{\Delta y}{dt},\qquad
 
 ## 設定ファイル
 
-`wheel_odometry` はパッケージ同梱の `rogi_localization/odometry/wheel_odometry/config/wheel_odometry.yaml` を使います。`rogi_nav.launch.py` は sample profile から選んだ初期 pose だけを追加で上書きします。
+設定はプロファイル側で管理します。`rogi_nav.launch.py` は `config_dir/wheel_odometry.yaml` を読み込み、`wheel_odometry_node` を直接起動します。`initial_pose.yaml` で選択された初期 pose は launch から追加で上書きされます。test設定は `example/test/config/wheel_odometry.yaml`、sample設定は `example/sample/config/wheel_odometry.yaml` です。
 
 | key | sample/default 値 | 数式上の意味 |
 | --- | --- | --- |
