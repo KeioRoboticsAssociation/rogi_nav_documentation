@@ -2,7 +2,7 @@
 
 ## 役割
 
-`simple_pure_pursuit` は CSV 経路を追従し、`/cmd_vel` を生成します。`FollowPath` action の `path_index` で追従対象の経路を選びます。
+`simple_pure_pursuit` は CSV 経路を追従し、`/cmd_vel` を生成します。`FollowPath` action の `path_index` で追従対象の経路を選び、終点付近の減速と停止完了判定は `StopController` に委譲します。
 
 ## Interface
 
@@ -11,6 +11,7 @@
 | action server | `follow_path` | `rogi_msgs/action/FollowPath` |
 | subscribe | `/localization_pose` | `geometry_msgs/msg/PoseWithCovarianceStamped` |
 | subscribe | `/robot_pose` | `geometry_msgs/msg/Pose2D` |
+| subscribe | `/odom` | `nav_msgs/msg/Odometry` |
 | publish | `/cmd_vel` | `geometry_msgs/msg/Twist` |
 | publish | `/pure_pursuit_path` | `nav_msgs/msg/Path` |
 | publish | `/distance_to_goal` | `std_msgs/msg/Float64` |
@@ -92,17 +93,7 @@ v_y=v_{\max}\frac{t_y}{\|t\|}
 
 ここで {math}`k_\theta` は `rotate_gain` です。通常は nearest 点の yaw、lookahead が終点なら終点 yaw を使います。
 
-終点に近いときは減速します。終点距離を {math}`d_g`、`stop_threshold` を {math}`d_s` とすると、
-
-```{math}
-\alpha=\frac{d_g}{d_s}
-```
-
-```{math}
-v_{\mathrm{target}}=v_{\max}\alpha+k_s d_g(1-\alpha)
-```
-
-です。{math}`k_s` は `stop_gain` です。
+終点付近では、目標方向はそのままに、並進速度の大きさを `StopController` の出力に置き換えます。停止方式ごとの速度計算は [](stop.md) を参照してください。
 
 角速度は最大値で clamp します。
 
@@ -120,28 +111,20 @@ clamp が発生した場合は並進も縮小します。
 v_x\leftarrow\gamma v_x,\qquad v_y\leftarrow\gamma v_y
 ```
 
-## goal 判定
+## 終点停止
 
-終点 pose を {math}`g=(x_g,y_g,\theta_g)` とすると、完了条件は次です。
-
-```{math}
-\sqrt{(x_g-x_r)^2+(y_g-y_r)^2}<d_{\mathrm{goal}}
-```
-
-```{math}
-|\operatorname{wrap}(\theta_g-\theta_r)|<\theta_{\mathrm{goal}}
-```
-
-両方を満たすと `/cmd_vel` を 0 にし、action を success にします。
+終点までの距離、終点 yaw との誤差、および odometry の並進速度と角速度を `StopController` に渡します。停止完了と判定されたら `/cmd_vel` を 0 にし、`FollowPath` action を success にします。判定条件は {ref}`stop-goal-judgement` を参照してください。
 
 ## 設定ファイル
 
-`simple_pure_pursuit` には専用 YAML はありません。`rogi_nav.launch.py` が profile と `config_dir` から parameter を組み立てます。
+`rogi_nav.launch.py` が profile と `config_dir` から parameter を組み立てます。追従制御と停止制御の ROS parameter は `control/config.yaml` にまとめて記述します。
 
 | 設定元 | key / path | 対応 |
 | --- | --- | --- |
 | `config_dir/path/trajectory/{0..11}.csv` | 経路 CSV | `input.csv.follow_path_files` |
 | `localization/config.yaml` | `topics.localization_pose` | `pose_with_covariance_topic` |
+| `localization/config.yaml` | `topics.odom` | `odometry_topic` |
+| `control/config.yaml` または `control/<profile>/config.yaml` | `simple_pure_pursuit.ros__parameters` | 追従制御・停止制御 parameter |
 | `real.yaml` / `sim.yaml` | `launch.components.pure_pursuit.simple_pure_pursuit.enabled` | ノード起動の有効/無効 |
 | `real.yaml` / `sim.yaml` | `launch.components.pure_pursuit.simple_pure_pursuit.parameters` | 任意の ROS parameter 上書き |
 
@@ -171,12 +154,8 @@ launch:
           path.follow.velocity.max_linear: 1.0
           path.follow.velocity.max_angular: 3.0
           path.follow.gain.rotate: 1.0
-          path.follow.gain.stop: 1.0
           path.follow.gain.xy_scale_adjust: 1.0
           path.follow.gain.lateral: 0.5
-          path.follow.threshold.stop: 0.1
-          path.follow.goal.dist_threshold: 0.01
-          path.follow.goal.yaw_threshold_deg: 57.3
 ```
 
-現在の sample `real.yaml` / `sim.yaml` には `parameters` が無いため、上の値は実装 default が使われます。
+停止制御 parameter と設定例は [](stop.md) にまとめています。sample では `control/config.yaml`、`control/real/config.yaml`、`control/sim/config.yaml` のいずれかから基本値を読み込み、profile の `parameters` が指定されていればその値で上書きします。
