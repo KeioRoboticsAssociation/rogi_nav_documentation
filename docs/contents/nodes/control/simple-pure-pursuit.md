@@ -115,6 +115,27 @@ v_x\leftarrow\gamma v_x,\qquad v_y\leftarrow\gamma v_y
 
 終点までの距離、終点 yaw との誤差、および odometry の並進速度と角速度を `StopController` に渡します。停止完了と判定されたら `/cmd_vel` を 0 にし、`FollowPath` action を success にします。判定条件は {ref}`stop-goal-judgement` を参照してください。
 
+## 停止グラフ
+
+`path.follow.graph.enabled` が `true` の場合、終点までの距離が `path.follow.graph.start_distance` 以下になると記録を開始します。記録開始時刻を 0 s として、odometry の並進速度と終点までの距離を制御周期ごとに保存します。一度開始した記録は、ロボットがしきい値の外へ戻っても継続します。`false` の場合は記録もファイル出力も行いません。
+
+最初の有効な odometry sample を記録した時点で、`path.follow.graph.output_directory` 以下にタイムスタンプ付きディレクトリと次の SVG を作成します。走行完了、action のキャンセル、またはノード終了時に、全 sample を使って同じファイルを更新します。しきい値へ到達しなかった場合や、有効な odometry を取得できなかった場合は出力しません。
+
+```text
+output/
+└── YYYYMMDD_HHMMSS_mmm/
+    ├── velocity_vs_time.svg
+    └── distance_vs_time.svg
+```
+
+| parameter | default | 説明 |
+| --- | ---: | --- |
+| `path.follow.graph.enabled` | `true` | 停止グラフの記録と出力を有効にする |
+| `path.follow.graph.start_distance` | `1.0` | グラフ記録を開始する終点距離 [m] |
+| `path.follow.graph.output_directory` | `output` | タイムスタンプ付き出力ディレクトリを作成する親ディレクトリ |
+
+相対パスの `output` は、経路 CSV の場所から検出したリポジトリルートを基準に解決されます。そのため example config の出力先は `<repository>/output` です。リポジトリルートを検出できない場合だけ、launch process の作業ディレクトリを基準にします。起動時、記録開始時、保存完了時のログには、実際に使用する絶対パスを表示します。
+
 ## 設定ファイル
 
 `rogi_nav.launch.py` が profile と `config_dir` から parameter を組み立てます。追従制御と停止制御の ROS parameter は `control/config.yaml` にまとめて記述します。
@@ -150,12 +171,20 @@ launch:
       simple_pure_pursuit:
         enabled: true
         parameters:
-          path.follow.lookahead_distance: 0.5
-          path.follow.velocity.max_linear: 1.0
-          path.follow.velocity.max_angular: 3.0
-          path.follow.gain.rotate: 1.0
-          path.follow.gain.xy_scale_adjust: 1.0
-          path.follow.gain.lateral: 0.5
+          path:
+            follow:
+              lookahead_distance: 0.5
+              velocity:
+                max_linear: 1.0
+                max_angular: 3.0
+              gain:
+                rotate: 1.0
+                xy_scale_adjust: 1.0
+                lateral: 0.5
+              graph:
+                enabled: true
+                start_distance: 1.0
+                output_directory: output
 ```
 
 停止制御 parameter と設定例は [](stop.md) にまとめています。sample では `control/config.yaml`、`control/real/config.yaml`、`control/sim/config.yaml` のいずれかから基本値を読み込み、profile の `parameters` が指定されていればその値で上書きします。

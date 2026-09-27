@@ -34,6 +34,8 @@
 | 実機 | `/cmd_vel` → `cmd_vel_to_dcmotor` → `/rogidrive_cmd` → 実機インターフェース | PicoScan の scan、`/rogidrive_status` → `wheel_odometry` → `/odom`・TF |
 | Gazebo | `/cmd_vel` → `ros_gz_bridge` → シミュレートされたロボット | scan、`/odom_raw` → `odom_drift_simulator` → `/odom`、`odom_tf_broadcaster` による TF |
 
+`localization.method` に `odom` を指定すると、`relative_odometry` が `/start` を受信した瞬間の `/odom` を原点として、以後のオドメトリ差分を `/localization_pose` に出力します。LiDARによる自己位置推定は使用しません。
+
 実機インターフェースの `rs485_interface2` と `stm32_mavlink_udp` は外部パッケージです。図では launch が選択する接続先としてまとめています。
 
 シミュレータのディレクトリ名は `rogi_simulator`、ROS パッケージ名は `gazebo_simulator` です。オドメトリのドリフト付与は設定で切り替えます。図の左端の矢印は選択された実行環境からのセンサーフィードバックをまとめたものです。
