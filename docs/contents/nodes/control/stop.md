@@ -10,8 +10,7 @@
 | --- | --- | --- |
 | `distance_interpolation` | 終点距離による速度補間 | 終点距離 |
 | `velocity_ff` | 制動距離から速度を先に決める速度 FF | 終点距離、最大減速度 |
-| `bang_bang` | 最大加速度と最大減速度を切り替える | 終点距離、現在速度 |
-| `pseudo_acceleration_ff` | 速度入力の変化から擬似的な加速度 FF を作る | 終点距離、現在速度、前回入力速度 |
+| `bang_bang` | 一定速度保持から終点への P 制御へ切り替える | 終点距離、切替後の経過時間 |
 
 既定値は `distance_interpolation` です。mode は起動時に読み込まれ、存在しない文字列を指定すると node の初期化を失敗させます。
 
@@ -29,22 +28,21 @@
 | {math}`v_k` | odometry から得た現在並進速度 | ― |
 | {math}`v_{cmd,k}` | 今回出力する並進目標速度 | ― |
 | {math}`\Delta t` | 制御周期 | `control_period_ms / 1000` |
-| {math}`a_{max}` | 選択した mode の最大加速度 | 各 mode の `max_acceleration` |
-| {math}`a_{dec}` | 選択した mode の最大減速度の大きさ | 各 mode の `max_deceleration` |
+| {math}`a_{dec}` | 速度 FF の最大減速度の大きさ | `path.follow.stop.velocity_ff.max_deceleration` |
 
-すべての mode で、終点距離が切替距離以上なら pure pursuit の並進速度上限をそのまま返します。
+`distance_interpolation` と `velocity_ff`、および未切替の `bang_bang` では、終点距離が切替距離以上なら pure pursuit の並進速度上限をそのまま返します。
 
 ```{math}
 v_{cmd}=v_{max}\qquad(d_g\ge d_s)
 ```
 
-{math}`d_g<d_s` になったときだけ、選択した停止アルゴリズムへ切り替えます。`distance_interpolation` 以外の方式では、位置許容差の内側で速度入力が 0 になるよう、次の残り制動距離を使います。
+{math}`d_g<d_s` になったときだけ、選択した停止アルゴリズムへ切り替えます。`velocity_ff` と `bang_bang` の P 制御段階では、位置許容差の内側で速度入力が 0 になるよう、次の残り制動距離を使います。
 
 ```{math}
 d=\max(0,d_g-d_{goal})
 ```
 
-現在並進速度は `/odom` の body velocity から計算します。
+現在並進速度は停止完了判定に使います。現行の3方式の目標速度式は現在速度を参照しません。`/odom` の body velocity から計算します。
 
 ```{math}
 v_k=\sqrt{v_x^2+v_y^2}
@@ -85,62 +83,23 @@ v_{cmd}=\min\left(v_{max},\sqrt{2a_{dec}d}\right)
 
 ## bang_bang
 
-現在速度から必要制動距離を計算します。
+現行実装は、切替距離内に入った時刻を保持し、一定速度保持と P 制御の2段階で停止します。加速度を積分する方式ではありません。
+
+初めて {math}`d_g<d_s` になった時点を {math}`t_0` とし、{math}`T_h` を `hold_duration_sec`、{math}`v_h` を `hold_speed`、{math}`k_p` を `p_gain` とします。
 
 ```{math}
-d_{stop}=\frac{v_k^2}{2a_{dec}}
-```
-
-残り距離が必要制動距離より長ければ最大加速し、短ければ最大減速します。
-
-```{math}
-a_{cmd}=\begin{cases}
--a_{dec} & (d\le d_{stop})\\
-a_{max} & (d>d_{stop})
+v_{cmd}=\begin{cases}
+v_{max} & (\text{未切替かつ }d_g\ge d_s)\\
+\min(v_{max},v_h) & (t-t_0<T_h)\\
+\operatorname{clamp}(k_p\max(0,d_g-d_{goal}),0,\min(v_{max},v_h)) & (t-t_0\ge T_h)
 \end{cases}
 ```
 
-```{math}
-v_{cmd,k}=\operatorname{clamp}
-\left(v_k+a_{cmd}\Delta t,0,v_{max}\right)
-```
+一度切り替わると、距離が再び `switching_distance` 以上になっても保持・P 制御を継続します。経過時間には `steady_clock` を使うため、Gazebo のシミュレーション時刻ではなく実時間です。新しい `FollowPath` goal の開始時に履歴をリセットします。
 
-{math}`a_{max}` と {math}`a_{dec}` には、それぞれ `path.follow.stop.bang_bang.max_acceleration` と `path.follow.stop.bang_bang.max_deceleration` を使います。現在速度と制動距離を直接比較するため、高速域から停止を開始する位置を決めやすい方式です。一方、切替境界付近では odometry の速度ノイズや制御周期の影響で加速と減速が切り替わりやすくなります。
+P 制御段階では `simple_pure_pursuit` が並進方向を現在位置から終点へ向け直します。終点を通り過ぎた場合も終点側へ戻る指令になります。一定速度保持中には action の停止完了判定を行わず、P 制御へ移った後に下記の4条件で判定します。角速度は引き続き pure pursuit 側で計算します。
 
-## pseudo_acceleration_ff
-
-まず `velocity_ff` と同じ式で入力速度 {math}`v_{in,k}` を作ります。
-
-```{math}
-v_{in,k}=\min\left(v_{max},\sqrt{2a_{dec}d}\right)
-```
-
-入力速度の差分を、入力側の擬似加速度とします。
-
-```{math}
-a_{in,k}=\frac{v_{in,k}-v_{in,k-1}}{\Delta t}
-```
-
-現在速度と入力速度の差を時定数 {math}`\tau` で加速度へ変換し、加速度 FF を加えます。
-
-```{math}
-a_{out,k}=\operatorname{clamp}\left(
-\frac{v_{in,k}-v_k}{\tau}+K_{ff}a_{in,k},
--a_{dec},a_{max}
-\right)
-```
-
-出力速度は現在速度から 1 step 積分します。
-
-```{math}
-v_{cmd,k}=\operatorname{clamp}\left(
-v_k+a_{out,k}\Delta t,0,v_{max}
-\right)
-```
-
-{math}`a_{max}`、{math}`a_{dec}`、{math}`\tau`、{math}`K_{ff}` は、それぞれ `path.follow.stop.pseudo_acceleration_ff` 以下の `max_acceleration`、`max_deceleration`、`velocity_time_constant`、`acceleration_ff_gain` です。新しい `FollowPath` goal の開始時に入力速度履歴をリセットし、最初の step だけ {math}`a_{in,0}=0` とします。
-
-{math}`\tau` を小さくすると入力速度への追従が速くなりますが、加速度上限へ張り付きやすくなります。{math}`K_{ff}` を大きくすると入力速度変化を先取りできますが、距離推定の揺れも増幅しやすくなります。
+`pseudo_acceleration_ff` は削除済みです。この mode を指定すると初期化に失敗します。また、旧 `bang_bang.max_acceleration` / `max_deceleration` は現行制御で使用しません。古い example YAML にこれらのキーが残っている場合も、以下の現行キーに置き換えて調整してください。
 
 (stop-goal-judgement)=
 ## 停止完了判定
@@ -175,23 +134,21 @@ d_g<d_{goal}
 | `path.follow.stop.velocity_ff.switching_distance` | `1.0` | m | `velocity_ff` | 停止制御への切替距離 {math}`d_s` |
 | `path.follow.stop.velocity_ff.max_deceleration` | `1.0` | m/s² | `velocity_ff` | 最大減速度の大きさ {math}`a_{dec}` |
 | `path.follow.stop.bang_bang.switching_distance` | `1.0` | m | `bang_bang` | 停止制御への切替距離 {math}`d_s` |
-| `path.follow.stop.bang_bang.max_acceleration` | `1.0` | m/s² | `bang_bang` | 最大加速度 {math}`a_{max}` |
-| `path.follow.stop.bang_bang.max_deceleration` | `1.0` | m/s² | `bang_bang` | 最大減速度の大きさ {math}`a_{dec}` |
-| `path.follow.stop.pseudo_acceleration_ff.switching_distance` | `1.0` | m | `pseudo_acceleration_ff` | 停止制御への切替距離 {math}`d_s` |
-| `path.follow.stop.pseudo_acceleration_ff.max_acceleration` | `1.0` | m/s² | `pseudo_acceleration_ff` | 加速側の clamp 上限 {math}`a_{max}` |
-| `path.follow.stop.pseudo_acceleration_ff.max_deceleration` | `1.0` | m/s² | `pseudo_acceleration_ff` | 減速側の clamp 上限 {math}`a_{dec}` |
-| `path.follow.stop.pseudo_acceleration_ff.velocity_time_constant` | `0.2` | s | `pseudo_acceleration_ff` | 速度偏差を加速度へ変換する時定数 {math}`\tau` |
-| `path.follow.stop.pseudo_acceleration_ff.acceleration_ff_gain` | `1.0` | ― | `pseudo_acceleration_ff` | 擬似入力加速度の FF gain {math}`K_{ff}` |
 | `path.follow.goal.dist_threshold` | `0.01` | m | 全体 | 位置の停止完了しきい値 {math}`d_{goal}` |
 | `path.follow.goal.yaw_threshold_deg` | `1.0` | deg | 全体 | yaw の停止完了しきい値 {math}`\theta_{goal}` |
 | `path.follow.goal.linear_velocity_threshold` | `0.05` | m/s | 全体 | 並進速度の停止完了しきい値 {math}`v_{goal}` |
 | `path.follow.goal.angular_velocity_threshold` | `0.05` | rad/s | 全体 | 角速度の停止完了しきい値 {math}`\omega_{goal}` |
 | `path.follow.velocity.max_linear` | `1.0` | m/s | 全体 | 出力速度上限 {math}`v_{max}` |
-| `control_period_ms` | `10` | ms | `bang_bang`, `pseudo_acceleration_ff` | 差分と積分に使う周期 {math}`\Delta t` |
+| `path.follow.stop.bang_bang.hold_duration_sec` | `0.5` | s | `bang_bang` | 一定速度の保持時間 |
+| `path.follow.stop.bang_bang.hold_speed` | `0.5` | m/s | `bang_bang` | 保持速度・P 制御の速度上限 |
+| `path.follow.stop.bang_bang.p_gain` | `1.0` | 1/s | `bang_bang` | 残り制動距離に掛ける P gain |
+| `control_period_ms` | `10` | ms | 全体 | pure pursuit の制御周期 |
 
-切替距離、加速度、減速度、時定数には 0 より大きい有限値、FF gain と各完了しきい値には 0 以上の有限値が必要です。
+切替距離、速度 FF の減速度、保持速度、P gain には 0 より大きい有限値が必要です。距離補間 gain、保持時間、各完了しきい値は 0 以上の有限値、制御周期は正の値にします。未選択方式の設定も検証されます。
 
 ## 設定例
+
+`control/config.yaml` または `control/<profile>/config.yaml` に記述します。
 
 ```yaml
 simple_pure_pursuit:
@@ -199,27 +156,12 @@ simple_pure_pursuit:
     path:
       follow:
         stop:
-          # 使用する停止ロジックを1つだけ有効にする
-          # mode: distance_interpolation
-          # mode: velocity_ff
-          # mode: bang_bang
-          mode: pseudo_acceleration_ff
-          distance_interpolation:
-            gain: 1.0
-            switching_distance: 0.1
-          velocity_ff:
-            switching_distance: 1.0
-            max_deceleration: 1.0
+          mode: bang_bang
           bang_bang:
             switching_distance: 1.0
-            max_acceleration: 1.0
-            max_deceleration: 1.0
-          pseudo_acceleration_ff:
-            switching_distance: 1.0
-            max_acceleration: 1.0
-            max_deceleration: 1.0
-            velocity_time_constant: 0.2
-            acceleration_ff_gain: 1.0
+            hold_duration_sec: 0.5
+            hold_speed: 0.5
+            p_gain: 2.0
         goal:
           dist_threshold: 0.01
           yaw_threshold_deg: 1.0
@@ -228,4 +170,4 @@ simple_pure_pursuit:
     control_period_ms: 10
 ```
 
-実機調整では、まず低速で `velocity_ff` の `max_deceleration` を実際の制動性能に合わせます。その後 `bang_bang` または `pseudo_acceleration_ff` に切り替え、`max_acceleration`、{math}`\tau`、{math}`K_{ff}` の順に調整します。
+これは `example/test/config/control/real/config.yaml` の停止設定です。sample の既定方式は `distance_interpolation` です。test 実機設定の `max_linear` は `2.0 m/s`、モータ上限は `1000 rad/s` で、sample の `1.0 m/s`、`200 rad/s` とは異なります。表の default はノードの宣言値であり、example ごとの調整値ではありません。

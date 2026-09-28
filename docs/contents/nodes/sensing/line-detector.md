@@ -178,3 +178,5 @@ N_{\mathrm{refine}} \leftarrow
 ```
 
 入力 topic は `localization/config.yaml` の `topics.localization_scan` で決まり、sample では `/scan_for_localization` です。profile 側では `launch.components.sensing.line_detector.enabled` が起動可否です。
+
+scan の購読は `SensorDataQoS`（best effort）、線・線分・corner の publisher は深さ10です。test / nhk_2027 は `sensing/<profile>/config.yaml` を使用します。

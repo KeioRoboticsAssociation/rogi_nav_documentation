@@ -84,7 +84,7 @@ h\ne\emptyset \Rightarrow \operatorname{cancel}(h)
 \mathrm{path\_index}=i \Rightarrow P_i=\mathrm{follow\_path\_files}[i]
 ```
 
-sample launch は `path/trajectory/{0..11}.csv` を 12 本登録します。そのため XML 側で `path_index="11"` までは参照できます。存在しない index や空 CSV を指定すると、pure pursuit 側で action goal が reject され、この BT node は `FAILURE` になります。
+sample launch は `path/trajectory/{0..11}.csv` を 12 本登録します。index の範囲は 0〜11 ですが、sample が収録する CSV は 0・1 のみです。存在しない index や空 CSV を指定すると、pure pursuit 側で action goal が reject され、この BT node は `FAILURE` になります。
 
 `TreeNodesModel` には Groot 表示用に input port も定義します。
 
@@ -93,3 +93,5 @@ sample launch は `path/trajectory/{0..11}.csv` を 12 本登録します。そ�
     <input_port name="path_index"/>
 </Action>
 ```
+
+現行 sample の tree は 0〜11 を順に要求しますが、収録済み CSV は 0・1 だけです。そのままでは経路2の要求時に失敗します。使用する経路を生成するか、tree の `FollowPath` を収録済み index に合わせてください。`FollowPath.action` の goal は `int32 path_index`、result は `bool success`、feedback は空です。実行中の追加 goal は reject されます。

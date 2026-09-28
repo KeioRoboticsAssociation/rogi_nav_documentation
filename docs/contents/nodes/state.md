@@ -14,4 +14,5 @@ state/state-node
 state/follow-path-action
 state/wait-start
 state/action-selection
+state/environment-actions
 ```

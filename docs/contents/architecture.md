@@ -8,7 +8,7 @@
 
 [`rogi_nav.launch.py`](https://github.com/KeioRoboticsAssociation/rogi_nav/blob/main/rogi_launch/launch/rogi_nav.launch.py) が example の設定を読み込み、各コンポーネントを起動します。`real.yaml` / `sim.yaml` で実行環境と有効なノードを選び、`initial_pose.yaml` で初期位置を指定します。図のカードは機能単位であり、プロセスやコンテナの境界ではありません。
 
-[`state_node`](https://github.com/KeioRoboticsAssociation/rogi_nav/blob/main/rogi_state/state/src/state_node.cpp) は BehaviorTree.CPP v3 で `tree/main.xml` を実行します。`WaitStart` は `/start` を待ち、`FollowPath` は `/follow_path` action に `path_index` を渡します。結果・キャンセルの接続は図では省略しています。
+[`state_node`](https://github.com/KeioRoboticsAssociation/rogi_nav/blob/main/rogi_state/state/src/state_node.cpp) は BehaviorTree.CPP v3 で設定された `state_node.ros__parameters.tree_path`（既定 `tree/main.xml`）を実行します。`WaitStart` は `/start` を待ち、`FollowPath` は `/follow_path` action に `path_index` を渡します。結果・キャンセルの接続は図では省略しています。
 
 [`simple_pure_pursuit`](https://github.com/KeioRoboticsAssociation/rogi_nav/blob/main/rogi_control/simple_pure_pursuit/src/simple_pure_pursuit_node.cpp) は事前に作成した経路 CSV を読み込み、指定された経路と `/localization_pose` から `/cmd_vel` を生成します。`/robot_pose` の Pose2D 入力にも対応しています。図の経路 CSV はオンラインの経路計画ノードではありません。
 
@@ -34,7 +34,7 @@
 | 実機 | `/cmd_vel` → `cmd_vel_to_dcmotor` → `/rogidrive_cmd` → 実機インターフェース | PicoScan の scan、`/rogidrive_status` → `wheel_odometry` → `/odom`・TF |
 | Gazebo | `/cmd_vel` → `ros_gz_bridge` → シミュレートされたロボット | scan、`/odom_raw` → `odom_drift_simulator` → `/odom`、`odom_tf_broadcaster` による TF |
 
-`localization.method` に `odom` を指定すると、`relative_odometry` が `/start` を受信した瞬間の `/odom` を原点として、以後のオドメトリ差分を `/localization_pose` に出力します。LiDARによる自己位置推定は使用しません。
+RANSAC localizer のサービス `/localization/set_ransac_enabled` に `false` を送ると、現在の推定 pose から odometry だけで伝播する `odom_only` に切り替わります。`true` で再捕捉へ戻ります。`localization.method: odom` や開始時に原点をリセットする `relative_odometry` ノードは現在の実装にはありません。
 
 実機インターフェースの `rs485_interface2` と `stm32_mavlink_udp` は外部パッケージです。図では launch が選択する接続先としてまとめています。
 
@@ -49,3 +49,5 @@ RViz2 と visualizer は地図・経路・自己位置を表示します。Groot
 編集対象は [`_static/architecture.svg`](../_static/architecture.svg) です。外部フォント・画像・JavaScript への依存はありません。変更後はブラウザで開き、文字のはみ出しと接続線を確認してください。
 
 デザイン参考: [Grove-G1 のアーキテクチャ図](https://github.com/Adyansh04/grove-g1/blob/main/docs/media/architecture.svg)。色分け・角丸カード・流れる接続線の表現を参考に、rogi_nav の実装に合わせて作成しています。
+
+BT からは地図エリアと RANSAC 補正モードも変更できます。[](nodes/state/environment-actions.md) を参照してください。停止時には `/odom` の並進・角速度も判定に使います。RViz の状態 HUD と記録・再生は [](nodes/visualization.md) にまとめています。

@@ -114,6 +114,10 @@ A\xi=b
 
 実装では 3x3 の Cramer 法で解きます。行列式が小さい場合は解けないため、その周期の odometry 更新をスキップします。
 
+最小二乗で得た yaw 差分は、物理配置に合わせて `dyaw = -dyaw` と反転してから積分・速度出力に使います。`cmd_vel_to_dcmotor` の yaw 反転と対応します。
+
+累積回転数を返す RS485 feedback では `wrap_angle_delta=false` を使います。`true` にすると一周期に半回転を超えるモータ差分が折り返され、移動量や向きを誤るためです。
+
 ## 積分
 
 body 座標の差分 {math}`(\Delta x,\Delta y,\Delta\theta)` は、中点 yaw で odom 座標へ回転して積分します。
@@ -144,7 +148,7 @@ v_y=\frac{\Delta y}{dt},\qquad
 
 ## 設定ファイル
 
-設定はプロファイル側で管理します。`rogi_nav.launch.py` は `config_dir/wheel_odometry.yaml` を読み込み、`wheel_odometry_node` を直接起動します。`initial_pose.yaml` で選択された初期 pose は launch から追加で上書きされます。test設定は `example/test/config/wheel_odometry.yaml`、sample設定は `example/sample/config/wheel_odometry.yaml` です。
+設定は `config_dir/localization/wheel_odometry/config.yaml` の `wheel_odometry.ros__parameters` です。`rogi_nav.launch.py` が `wheel_odometry_node` を起動し、`initial_pose.yaml` の初期 pose を追加で上書きします。
 
 | key | sample/default 値 | 数式上の意味 |
 | --- | --- | --- |
@@ -161,7 +165,7 @@ v_y=\frac{\Delta y}{dt},\qquad
 | `wheel_drive_angles_deg` | `[135,-135,-45,45]` | {math}`\beta_i` |
 | `encoder_signs` | `[1,1,1,1]` | {math}`s_i` |
 | `rogidrive_position_is_revolutions` | `true` | {math}`q_i` を revolution として扱う |
-| `wrap_angle_delta` | `true` | encoder 差分を {math}`[-\pi,\pi]` に畳む |
+| `wrap_angle_delta` | `false` | encoder 差分を {math}`[-\pi,\pi]` に畳む |
 | `publish_tf` | `true` | `odom -> base_link` TF を publish |
 
 profile 側では `launch.components.localization.wheel_odometry.enabled` が起動可否です。sample の `sim.yaml` では false、`real.yaml` では true です。

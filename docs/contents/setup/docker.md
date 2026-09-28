@@ -1,32 +1,35 @@
 # Docker でのセットアップ
 
-ローカルで image を作る場合は次を実行します。
+リポジトリのルートで、ローカルビルドまたは配布イメージの取得を行います。
 
 ```bash
-cd ~/rogi_nav_ws/src/rogi_nav
 make build
-```
-
-配布済み image を使う場合は `make pull` だけで構いません。
-
-```bash
+# 配布イメージを使う場合
 make pull
 ```
 
-シミュレーションは次で起動します。
-
-```bash
-make run
-```
-
-profile を明示する場合は `LAUNCH_ARGS` に渡します。
-
-```bash
-make run LAUNCH_ARGS="config_profile:=sim"
-```
-
-コンテナ内で手作業する場合だけ、シェルを開いてから通常のホスト手順を実行します。
+イメージは依存環境を提供し、ソースはリポジトリ全体を `/ros2_ws/src/rogi_nav` に bind mount します。外部ツールの取得には GitHub の SSH 認証が必要です。`make shell` はホストの SSH agent、`~/.ssh`、`~/.gitconfig` をコンテナへ渡します。
 
 ```bash
 make shell
+# コンテナ内で実行
+make setup
 ```
+
+取得した `common_tool` の外部ツールはホストにも残ります。シミュレーションはホストのグラフィカルセッションから次で起動します。
+
+```bash
+ROGI_NAV_IMAGE=ghcr.io/keioroboticsassociation/rogi_nav:jazzy \
+  docker/run_sim.sh
+```
+
+このスクリプトは X11、GPU、ワークスペースを設定し、ビルドして sample の sim を起動します。NVIDIA が利用できない場合は DRI またはソフトウェア描画を使用します。
+
+```bash
+ROGI_NAV_IMAGE=ghcr.io/keioroboticsassociation/rogi_nav:jazzy \
+ROGI_NAV_CONFIG_DIR=/ros2_ws/src/rogi_nav/example/test/config \
+ROGI_NAV_CONFIG_PROFILE=sim \
+  docker/run_sim.sh
+```
+
+`make run` は Docker 起動用ではなく、ホスト上で sample の real を起動するコマンドです。停止は起動端末の `Ctrl+C` で行います。現在の Makefile には `down` の実行処理がないため、`make down` は停止操作として使えません。

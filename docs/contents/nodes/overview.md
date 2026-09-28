@@ -11,9 +11,9 @@
 
 1. `map_loader` が CSV 地図を `rogi_msgs/msg/Map` として配信し、`map_converter` が自己位置推定用の `OccupancyGrid` に変換します。
 2. 実機では `sick_scan_xd` が LiDAR scan を出し、`scan_merger` が複数 scan を `base_link` 基準の 1 本の scan に統合します。シミュレーションでは Gazebo 側の scan が同じ後段に入ります。
-3. `line_detector` が scan 点群から RANSAC で線分を抽出し、`emcl2` と `ransac_localizer` が地図、scan、odom、線分を使って `map` 上の robot pose を推定します。
+3. `line_detector` が scan 点群から RANSAC で線分を抽出し、選択した `ransac_localizer` が地図線分・観測線分・odom、または `emcl2` が占有格子・scan・odom TF を使って `map` 上の robot pose を推定します。
 4. `simple_pure_pursuit` が推定 pose と CSV 経路から `/cmd_vel` を生成します。
 5. 実機では `cmd_vel_to_dcmotor_node` が `/cmd_vel` を Rogidrive motor command に変換し、`wheel_odometry` が encoder から `/odom` を更新します。
 6. `state_node` が BehaviorTree を tick し、`FollowPath` action を通じて pure pursuit の経路実行順を管理します。
 
-frame は `map -> odom -> base_link -> sensor` が基本です。`emcl2` と `ransac_localizer` は `map -> odom` を publish し得るため、同時有効化する場合は profile と TF の競合に注意します。
+frame は `map -> odom -> base_link -> sensor` が基本です。統合 launch は `localization.method` に一致し、かつ enabled の自己位置推定ノードを起動します。両方の enabled が true でも手法は一方が選ばれます。

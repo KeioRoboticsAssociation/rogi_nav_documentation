@@ -106,4 +106,6 @@ scan_merger:
       - /lidar2/scan
 ```
 
-`frame_id` と `frequency` は YAML ではなく `sensing.launch.py` の launch argument です。default は `base_link` と `40.0` Hz です。`angle_min/max`、`angle_increment`、`range_min/max`、`scan_time` は launch から渡されないため、実装 default が使われます。
+`frame_id`、`frequency`、`angle_min/max`、`angle_increment`、`range_min/max`、`scan_time` は `scan_merger.ros__parameters` から渡します。sample は `base_link`、40 Hz、角度 ±π、角度刻み π/720、距離 0.10〜20.0 m、scan_time 0.1 s です。旧 launch argument の `merged_scan_frame_id` / `lidar_merger_frequency` は現在このノードへの上書きには使われません。
+
+入力・出力の scan は `SensorDataQoS`（best effort）です。購読側も互換の QoS を設定してください。test / nhk_2027 では `sensing/real/config.yaml` または `sensing/sim/config.yaml` が選ばれます。

@@ -60,13 +60,16 @@ B[\mathrm{node}]=n_{ros},\qquad B[\mathrm{move\_index}]=m
 | `FollowPathAction` | `FollowPathAction` | 同上 |
 | `WaitStart` | `ReceiveStartSignal` | `/start=true` 待ち |
 | `ActionSelection` | `ActionSelection` | plan 文字列による子 node 選択 |
+| `SetLocalizationMode` | `SetLocalizationModeAction` | RANSAC 補正の有効・無効を切替 |
+| `SetMapArea` | `SetMapAreaAction` | ground / level_1 地図を切替 |
+| `LevelRobot` | `LevelRobotAction` | Gazebo モデルの roll / pitch を 0 にして高さを指定 |
 
 ## 設定ファイル
 
-`state_node` は `example/sample/config/tree/main.xml` を読みます。`rogi_nav.launch.py` は `config_dir` から path を組み立て、`tree_path` parameter として渡します。
+`state_node` は `state/config.yaml`（または profile 別セクション）の `state_node.ros__parameters.tree_path` を読みます。既定値は `tree/main.xml` です。`rogi_nav.launch.py` は `config_dir` 基準で相対 path を解決し、`tree_path` parameter として渡します。test は `tree/odom_only.xml` を選択しています。
 
 ```{math}
-P_{\mathrm{tree}}=\operatorname{join}(D_{\mathrm{config}},\mathrm{tree/main.xml})
+P_{\mathrm{tree}}=\operatorname{join}(D_{\mathrm{config}},\mathrm{tree\_path})
 ```
 
 profile 側の起動 key は次です。
@@ -81,7 +84,7 @@ launch:
         enabled: false
 ```
 
-`move_index` は `state.launch.py` の launch argument で、default は `0` です。`rogi_nav.launch.py` からは現在明示上書きされていないため、通常は default が入ります。
+`move_index` は `state_node.ros__parameters.move_index` から `state.launch.py` へ渡されます。default は `0` です。地図・自己位置推定・Gazebo の切替は [](environment-actions.md) を参照してください。
 
 Groot を使う場合は profile の `launch` 直下に次の optional key を置けます。
 

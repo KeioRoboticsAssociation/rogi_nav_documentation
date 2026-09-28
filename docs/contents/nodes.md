@@ -10,4 +10,6 @@ nodes/sensing
 nodes/localization
 nodes/control
 nodes/state
+nodes/simulation
+nodes/visualization
 ```

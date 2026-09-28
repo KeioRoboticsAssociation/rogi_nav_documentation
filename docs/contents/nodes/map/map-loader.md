@@ -83,3 +83,21 @@ launch:
       map_loader:
         enabled: true
 ```
+
+## 地図エリアの切替
+
+`/map/set_level_1` (`std_srvs/srv/SetBool`) により、起動時に読み込んだ地図を切り替えられます。`false` は ground、`true` は level_1 です。成功すると `/raw_map` を即時配信し、後段の地図変換・自己位置推定・可視化へ反映されます。Gazebo の world 自体は変更しません。
+
+```yaml
+map:
+  line_segments_path: ground/line_segments.csv
+  circles_path: ground/circles.csv
+  level_1_line_segments_path: level_1/line_segments.csv
+  level_1_circles_path: level_1/circles.csv
+map_loader:
+  ros__parameters:
+    reverse_y: false
+    reverse_y_offset: 0.0
+```
+
+追加のパスも `config_dir/map` 基準で解決します。level_1 は両方の CSV が正常に読み込めた場合だけ選択可能です。初期地図は ground です。BT では `SetMapArea` を使えます。

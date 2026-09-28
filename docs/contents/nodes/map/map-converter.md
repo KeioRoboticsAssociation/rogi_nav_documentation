@@ -63,10 +63,10 @@ y_c+r\sin\theta
 \end{bmatrix}
 ```
 
-サンプル数は次式です。
+円弧境界の分割数は次式です。`center.z != 0` の円は rasterize しません。
 
 ```{math}
-N=\max\left(10,\left\lfloor\frac{8r}{\Delta}\right\rfloor\right)
+N=\mathrm{circle\_approximation\_segments}
 ```
 
 ```{math}
@@ -85,14 +85,17 @@ full circle でない場合は、角度 {math}`\phi=\operatorname{atan2}(y-y_c,x
 \operatorname{wrap}_{[0,2\pi)}(\phi-\theta_s)\le \theta_e-\theta_s
 ```
 
+上式は正の sweep の場合です。負の sweep では開始角から逆向きに判定します。角度幅がほぼ 0、またはほぼ 2π 以上なら円全体を塗りつぶします。
+
 ## 設定ファイル
 
-sample では `map_converter` 専用 YAML はありません。`rogi_launch/launch/components/map.py` から次の値だけが渡されます。
+`map/config.yaml` の次の設定を統合 launch から渡します。
 
-| 設定元 | key | 対応 |
-| --- | --- | --- |
-| `example/sample/config/map/config.yaml` | `topics.raw_map` | `map` subscription の remap 先 |
-| `example/sample/config/map/config.yaml` | `topics.map` | `occupancy_grid` publisher の remap 先 |
-| `real.yaml` / `sim.yaml` | `launch.components.map.map_converter.enabled` | ノード起動の有効/無効 |
+```yaml
+map_converter:
+  ros__parameters:
+    resolution: 0.01
+    circle_approximation_segments: 50
+```
 
-`resolution` は launch から渡されていないため、実装 default の {math}`\Delta=0.01` [m/cell] が使われます。解像度を profile から変えたい場合は、`map.py` 側で `resolution` parameter を渡す必要があります。
+`resolution` は m/cell、`circle_approximation_segments` は円弧の境界・外接範囲を計算する分割数で、正の整数が必要です。`launch.components.map.map_converter.parameters` でも上書きできます。起動可否は同じ階層の `enabled`、入出力は `topics.raw_map` / `topics.map` で設定します。

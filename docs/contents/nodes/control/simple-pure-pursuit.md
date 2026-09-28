@@ -93,7 +93,7 @@ v_y=v_{\max}\frac{t_y}{\|t\|}
 
 ここで {math}`k_\theta` は `rotate_gain` です。通常は nearest 点の yaw、lookahead が終点なら終点 yaw を使います。
 
-終点付近では、目標方向はそのままに、並進速度の大きさを `StopController` の出力に置き換えます。停止方式ごとの速度計算は [](stop.md) を参照してください。
+終点付近では、並進速度の大きさを `StopController` の出力に置き換えます。`bang_bang` の P 制御段階では目標方向も現在位置から終点へ向け直します。停止方式ごとの速度計算は [](stop.md) を参照してください。
 
 角速度は最大値で clamp します。
 
@@ -104,7 +104,7 @@ v_y=v_{\max}\frac{t_y}{\|t\|}
 clamp が発生した場合は並進も縮小します。
 
 ```{math}
-\gamma=\frac{\omega_{\max}}{|\omega|}k_{\mathrm{xy}}
+\gamma=\min\left(1,\frac{\omega_{\max}}{|\omega|}k_{\mathrm{xy}}\right)
 ```
 
 ```{math}
@@ -155,6 +155,10 @@ output/
 x,y,theta
 ```
 
+`x,y` は m、`theta` は rad です。両ノードとも degree への自動判定・変換はしません。ヘッダーなど数値に変換できない行は読み飛ばします。
+
+`path/wayoints/*.csv`（現在のディレクトリ名は `wayoints`）は経路生成用の編集点です。制御ノードが直接読むのは `trajectory/*.csv` です。test の経路 0・1 は途中から終点 yaw に到達する角度列になっており、終点より手前で回転を終えるよう調整されています。これは CSV の変更で、追従ノードに waypoint 用の新しいパラメータはありません。
+
 launch は固定で 12 本の trajectory を探します。
 
 ```{math}
@@ -187,4 +191,8 @@ launch:
                 output_directory: output
 ```
 
-停止制御 parameter と設定例は [](stop.md) にまとめています。sample では `control/config.yaml`、`control/real/config.yaml`、`control/sim/config.yaml` のいずれかから基本値を読み込み、profile の `parameters` が指定されていればその値で上書きします。
+停止制御 parameter と設定例は [](stop.md) にまとめています。sample は `control/config.yaml`、test / nhk_2027 は `control/real/config.yaml` または `control/sim/config.yaml` から基本値を読み込みます。profile の `parameters` は最上位キー単位の上書きです。例えば `path` を指定すると、基本設定の `path` 全体を置き換えるため、維持したい停止設定なども含めて記述してください。
+
+## 実行中のパラメータ変更
+
+`path.follow.velocity.max_linear` と `path.follow.velocity.max_angular` は実行中の変更を制御値へ反映します。有限・非負の double が必要です。他の gain、停止方式、しきい値などは起動時に読み込むため、YAML 編集後にノードを再起動します。
