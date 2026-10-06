@@ -43,6 +43,21 @@ i_l=\min\left\{i\ge i_n\mid \sqrt{(x_i-x_r)^2+(y_i-y_r)^2}\ge L_d\right\}
 
 見つからない場合は終点 index を使います。
 
+## 遅延補償
+
+自己位置推定・通信・モータ応答の遅れを補償するため、制御には推定姿勢そのものではなく、前回 publish した `/cmd_vel`（body 座標の {math}`v_x, v_y, \omega`）で `path.follow.latency_compensation_sec`（{math}`\tau`、既定 0.2 s）だけ等速に進めた予測姿勢を使います。
+
+```{math}
+\theta_m=\theta+\tfrac{1}{2}\omega\tau,\qquad
+\begin{bmatrix}x'\\y'\end{bmatrix}=
+\begin{bmatrix}x\\y\end{bmatrix}+\tau
+\begin{bmatrix}\cos\theta_m&-\sin\theta_m\\\sin\theta_m&\cos\theta_m\end{bmatrix}
+\begin{bmatrix}v_x\\v_y\end{bmatrix},\qquad
+\theta'=\theta+\omega\tau
+```
+
+以降の nearest / lookahead の探索、速度指令、終点停止の距離はすべてこの予測姿勢 {math}`(x',y',\theta')` で計算します。`/distance_to_goal` は予測前の推定姿勢から計算します。{math}`\tau=0` で補償を無効にできます。
+
 ## robot 座標への変換
 
 map 座標の差分 {math}`d=(x_i-x_r,y_i-y_r)` を robot 座標へ変換します。
@@ -171,13 +186,14 @@ P_i=\operatorname{join}(D_{\mathrm{config}},\mathrm{path/trajectory}/i.csv),
 ```yaml
 launch:
   components:
-    pure_pursuit:
+    control:
       simple_pure_pursuit:
         enabled: true
         parameters:
           path:
             follow:
               lookahead_distance: 0.5
+              latency_compensation_sec: 0.2
               velocity:
                 max_linear: 1.0
                 max_angular: 3.0
@@ -195,4 +211,4 @@ launch:
 
 ## 実行中のパラメータ変更
 
-`path.follow.velocity.max_linear` と `path.follow.velocity.max_angular` は実行中の変更を制御値へ反映します。有限・非負の double が必要です。他の gain、停止方式、しきい値などは起動時に読み込むため、YAML 編集後にノードを再起動します。
+`path.follow.velocity.max_linear`、`path.follow.velocity.max_angular`、`path.follow.latency_compensation_sec` は実行中の変更を制御値へ反映します。有限・非負の double が必要です。他の gain、停止方式、しきい値などは起動時に読み込むため、YAML 編集後にノードを再起動します。

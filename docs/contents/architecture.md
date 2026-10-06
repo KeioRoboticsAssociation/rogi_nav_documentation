@@ -14,7 +14,7 @@
 
 ## 地図・自己位置推定
 
-[`map_loader` / `map_converter`](https://github.com/KeioRoboticsAssociation/rogi_nav/blob/main/rogi_launch/launch/components/map.py) は直線・円の CSV を読み込み、形状地図 `/raw_map` と占有格子地図 `/map` を配信します。
+[`map_loader` / `map_converter`](https://github.com/KeioRoboticsAssociation/rogi_nav/blob/main/rogi_launch/launch/components/map.launch.py) は直線・円の CSV を読み込み、形状地図 `/raw_map` と占有格子地図 `/map` を配信します。
 
 [`localization.launch.py`](https://github.com/KeioRoboticsAssociation/rogi_nav/blob/main/rogi_launch/launch/components/localization.launch.py) は `localization_method` に応じて以下の一方を起動します。
 

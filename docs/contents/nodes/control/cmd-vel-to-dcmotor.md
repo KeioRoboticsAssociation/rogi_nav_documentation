@@ -93,7 +93,7 @@ omni wheel 角速度は、
 
 ## 設定ファイル
 
-統合 launch では `control/config.yaml` または `control/<profile>/config.yaml` の `cmd_vel_to_dcmotor.ros__parameters` を使います。単体の `cmd_vel_to_dcmotor.launch.py` で `config_file` を指定しない場合は、パッケージ同梱 YAML を使います。sample の `real.yaml` では有効、`sim.yaml` では無効です。
+統合 launch の [`components/control.launch.py`](https://github.com/KeioRoboticsAssociation/rogi_nav/blob/main/rogi_launch/launch/components/control.launch.py) から起動し、`control/config.yaml` または `control/<profile>/config.yaml` の `cmd_vel_to_dcmotor.ros__parameters` を使います。`simple_pure_pursuit` と同じ `control_container` に `use_intra_process_comms: true` でロードされ、`/cmd_vel` は zero-copy で渡ります。motor command は `/cmd_vel` 受信のたびに publish します（周期 publish はしません）。パッケージには launch / config を同梱していません。sample の `real.yaml` では有効、`sim.yaml` では無効です。
 
 表は sample の YAML 値です。ノード単体の宣言値は減速比 `1.0`、モータ上限 `20.0 rad/s` です。
 
@@ -110,7 +110,6 @@ omni wheel 角速度は、
 | `motor_signs` | `[1,1,1,1]` | {math}`\eta_i` |
 | `max_motor_speed_rad_s` | `200.0` | clamp 上限 {math}`m_{\max}` |
 | `target_position_rad` | `0.0` | message の位置値 [rad] |
-| `publish_period_sec` | `0.02` | command publish 周期 |
 | `cmd_vel_timeout_sec` | `0.5` | timeout 条件 {math}`t_{\mathrm{timeout}}` |
 | `stop_on_timeout` | `true` | timeout 時に停止 command を出す |
 | `disable_on_zero` | `false` | ほぼ 0 の motor の送信速度を 0 にする（mode は速度制御のまま） |

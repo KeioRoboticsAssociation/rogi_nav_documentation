@@ -166,7 +166,7 @@ v_y=\frac{\Delta y}{dt},\qquad
 | `encoder_signs` | `[1,1,1,1]` | {math}`s_i` |
 | `rogidrive_position_is_revolutions` | `true` | {math}`q_i` を revolution として扱う |
 | `wrap_angle_delta` | `false` | encoder 差分を {math}`[-\pi,\pi]` に畳む |
-| `publish_tf` | `true` | `odom -> base_link` TF を publish |
+| `publish_tf` | `false` | `odom -> base_link` TF を publish。example では `pose2d_to_odometry`（`/raw_pose`）が TF を出すため false |
 
 profile 側では `launch.components.localization.wheel_odometry.enabled` が起動可否です。sample の `sim.yaml` では false、`real.yaml` では true です。
 

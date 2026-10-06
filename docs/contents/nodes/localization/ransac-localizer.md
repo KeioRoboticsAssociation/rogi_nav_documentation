@@ -71,6 +71,14 @@ orthogonal_angle_tolerance: 6.0  # degree
 
 観測線分のTF変換には現在利用できる最新TFを使用します。線分時刻でのTF補間は行いません。
 
+使用するオドメトリは、統合 launch が `localization/<profile>/config.yaml` の `topics.odom` を `odom` に remap して切り替えます（`ransac/config.yaml` には topic のパラメータはありません）。
+`map -> odom` は購読中のオドメトリから計算するため、`odom -> base_link` の TF も同じオドメトリが出している必要があります（`odom_frame_id` とオドメトリの `frame_id` を一致させる）。
+
+| profile | `topics.odom` | `odom -> base_link` TF |
+| --- | --- | --- |
+| real | `/raw_pose/odom`（MCU の IMU+エンコーダ推定を `pose2d_to_odometry` で変換） | `pose2d_to_odometry`（`publish_tf: true`）。`wheel_odometry` は `/odom` のみ配信し TF は出さない |
+| sim | `/odom`（Gazebo 真値にドリフトを加えたもの） | Gazebo 側の `odom_tf_broadcaster` |
+
 ## パラメータ
 
 角度パラメータの単位は、`initial_pose_a` だけrad、それ以外はdegreeです。以下はsample設定値です。

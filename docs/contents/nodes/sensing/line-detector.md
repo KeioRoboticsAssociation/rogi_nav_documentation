@@ -167,7 +167,7 @@ sample では `example/sample/config/sensing/config.yaml` の `line_detector.ros
 | `refinement_sample_count` | `30` | refine に使う最大 inlier 数 |
 | `distance_threshold` | `0.02` | inlier 条件 {math}`d_j<d_{\mathrm{th}}` |
 | `segment_gap_threshold` | `0.5` | 線分分割条件 {math}`g_{\mathrm{th}}` |
-| `min_range`, `max_range` | `0.30`, `20.0` | scan 点 filter |
+| `min_range`, `max_range` | `0.05`, `20.0` | scan 点 filter |
 | `min_angle`, `max_angle` | `-π`, `π` | scan 点 filter |
 
 `rogi_nav.launch.py` は同じ値から `refinement_sample_count` を抜き出し、launch argument `ransac_refinement_sample_count` としても渡します。結果として `sensing_config_path` の値を読み込んだ後、この値だけ明示上書きされます。

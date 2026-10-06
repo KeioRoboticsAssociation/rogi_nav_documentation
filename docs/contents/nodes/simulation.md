@@ -10,6 +10,8 @@ ros2 launch gazebo_simulator simple_sim.launch.py
 
 `simple_sim.launch.py` は `model` に `four_wheel_omni`、`three_wheel_omni`、`simple_rover` を受け付けます。`robot_xacro` を指定した場合はそのファイルを優先します。Gazebo にスポーンする entity 名は `robot` です。統合 launch では `example/<example>/urdf/omni_robot.urdf.xacro` があれば自動選択します。
 
+統合 launch では [`components/gazebo.launch.py`](https://github.com/KeioRoboticsAssociation/rogi_nav/blob/main/rogi_launch/launch/components/gazebo.launch.py) が `simple_sim.launch.py` を include します。起動の有無は `launch.components.gazebo.simple_sim.enabled` で指定します。
+
 統合 launch の設定例です。
 
 ```yaml
@@ -35,7 +37,8 @@ simulation:
 
 | ノード / 機能 | 主な入出力 |
 | --- | --- |
-| `ros_gz_bridge` | `/cmd_vel` を Gazebo へ、`/clock`・`/odom_raw`・scan・IMU・カメラなどを ROS へ |
+| `cmd_vel_delay.py` | `/cmd_vel` → `/cmd_vel_delayed`。`delay_sec`（シミュレーション時間）だけ遅らせて実機の指令遅れを模擬。0 で遅延なし |
+| `ros_gz_bridge` | `/cmd_vel_delayed` を Gazebo の `/cmd_vel` へ、`/clock`・`/odom_raw`・scan・IMU・カメラなどを ROS へ |
 | `odom_drift_simulator.py` | `/odom_raw` → `/odom`。倍率、距離当たりの偏り、ノイズを付与 |
 | `odom_tf_broadcaster.py` | `/odom` → TF `odom → base_link`。真値・推定誤差も表示 |
 | `scan_frame_normalizer.py` | `/scan` → `/scan_for_localization`。LaserScan の frame を設定 |
